@@ -30,7 +30,7 @@ import com.rajib.portfolio.repository.SkillRepository;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "rajib-portfolio-two.vercel.app")
 public class PortfolioController {
 
     @Autowired private ProfileRepository profileRepo;

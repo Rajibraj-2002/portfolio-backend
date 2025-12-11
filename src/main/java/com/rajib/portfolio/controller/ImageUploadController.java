@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "rajib-portfolio-two.vercel.app")
 public class ImageUploadController {
 
     // Define the folder where images will be stored
