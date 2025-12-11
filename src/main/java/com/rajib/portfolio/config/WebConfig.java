@@ -1,7 +1,7 @@
 package com.rajib.portfolio.config;
 
 import java.nio.file.Path;
-import java.nio.file.Paths; // Import this
+import java.nio.file.Paths;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -15,13 +15,16 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("rajib-portfolio-two.vercel.app") // React URL
+                .allowedOrigins(
+                    "https://rajib-portfolio-two.vercel.app", // <--- ADDED https://
+                    "http://localhost:3000"                     // Keep localhost for testing
+                )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
 
-    // 2. RESOURCE HANDLER (Your existing image upload logic)
+    // 2. RESOURCE HANDLER
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         Path uploadDir = Paths.get(System.getProperty("user.dir") + "/uploads");
