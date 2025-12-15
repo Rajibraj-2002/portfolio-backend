@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate; // IMPORTED
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +31,6 @@ import com.rajib.portfolio.repository.SkillRepository;
 
 @RestController
 @RequestMapping("/api")
-// FIX: Added https:// and localhost
 @CrossOrigin(origins = {"https://rajib-portfolio-two.vercel.app", "http://localhost:3000"})
 public class PortfolioController {
 
@@ -40,6 +40,44 @@ public class PortfolioController {
     @Autowired private ExperienceRepository experienceRepo;
     @Autowired private EducationRepository educationRepo;
     @Autowired private CertificateRepository certificateRepo;
+    
+    // Inject JDBC Template for manual DB fixes
+    @Autowired private JdbcTemplate jdbcTemplate;
+
+    // --- 🛠️ EMERGENCY DATABASE FIXER ENDPOINT 🛠️ ---
+    // Visit https://your-app.onrender.com/api/fix-db to run this
+    @GetMapping("/fix-db")
+    public String fixDatabase() {
+        StringBuilder logs = new StringBuilder();
+        logs.append("Starting Database Fix...<br>");
+        
+        try {
+            // Profile Table
+            jdbcTemplate.execute("ALTER TABLE profile MODIFY summary LONGTEXT");
+            logs.append("✅ Fixed Profile Summary<br>");
+            jdbcTemplate.execute("ALTER TABLE profile MODIFY about_content LONGTEXT");
+            logs.append("✅ Fixed Profile About Content<br>");
+            jdbcTemplate.execute("ALTER TABLE profile MODIFY photo_url LONGTEXT");
+            jdbcTemplate.execute("ALTER TABLE profile MODIFY about_photo_url LONGTEXT");
+            logs.append("✅ Fixed Profile Image URLs<br>");
+
+            // Projects Table
+            jdbcTemplate.execute("ALTER TABLE projects MODIFY description LONGTEXT");
+            logs.append("✅ Fixed Project Description<br>");
+            jdbcTemplate.execute("ALTER TABLE projects MODIFY project_credentials LONGTEXT");
+            logs.append("✅ Fixed Project Credentials<br>");
+
+            // Experience & Education
+            jdbcTemplate.execute("ALTER TABLE experience MODIFY description LONGTEXT");
+            logs.append("✅ Fixed Experience Description<br>");
+            jdbcTemplate.execute("ALTER TABLE education MODIFY description LONGTEXT");
+            logs.append("✅ Fixed Education Description<br>");
+
+            return "<h1>Database Repair Successful!</h1>" + logs.toString();
+        } catch (Exception e) {
+            return "<h1>Error Fixing Database</h1><p>" + e.getMessage() + "</p>";
+        }
+    }
 
     // ---------------- PROFILE ----------------
     @GetMapping("/profile")
@@ -62,6 +100,9 @@ public class PortfolioController {
             profile.setAboutPhotoUrl(newProfile.getAboutPhotoUrl());
             return profileRepo.save(profile);
         }).orElseGet(() -> {
+            // If ID 1 doesn't exist, create it.
+            // Note: If using AUTO_INCREMENT, setting ID manually might be ignored by some DBs,
+            // but for Profile (singleton), this logic usually works or creates ID 1 if table is empty.
             newProfile.setId(id);
             return profileRepo.save(newProfile);
         });
@@ -171,4 +212,10 @@ public class PortfolioController {
 
     @DeleteMapping("/certificates/{id}")
     public void deleteCertificate(@PathVariable Long id) { certificateRepo.deleteById(id); }
+
+    // Health check for UptimeRobot
+    @GetMapping("/health")
+    public String healthCheck() {
+        return "Backend is Active";
+    }
 }
