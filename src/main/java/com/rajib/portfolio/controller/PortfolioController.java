@@ -30,7 +30,8 @@ import com.rajib.portfolio.repository.SkillRepository;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+// FIX: Added https:// and localhost
+@CrossOrigin(origins = {"https://rajib-portfolio-two.vercel.app", "http://localhost:3000"})
 public class PortfolioController {
 
     @Autowired private ProfileRepository profileRepo;
@@ -81,9 +82,7 @@ public class PortfolioController {
             project.setTechStack(newProject.getTechStack());
             project.setProjectLink(newProject.getProjectLink());
             project.setRepoLink(newProject.getRepoLink());
-            // NEW FIELD
             project.setProjectCredentials(newProject.getProjectCredentials()); 
-            
             return projectRepo.save(project);
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Project not found"));
     }
@@ -117,7 +116,6 @@ public class PortfolioController {
     @PostMapping("/experience")
     public Experience addExperience(@RequestBody Experience experience) { return experienceRepo.save(experience); }
 
-    // THIS METHOD MUST EXIST FOR UPDATE TO WORK
     @PutMapping("/experience/{id}")
     public Experience updateExperience(@PathVariable Long id, @RequestBody Experience newExp) {
         return experienceRepo.findById(id).map(exp -> {
@@ -129,11 +127,8 @@ public class PortfolioController {
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Experience not found"));
     }
 
-    // THIS METHOD MUST EXIST FOR DELETE TO WORK
     @DeleteMapping("/experience/{id}")
-    public void deleteExperience(@PathVariable Long id) {
-        experienceRepo.deleteById(id);
-    }
+    public void deleteExperience(@PathVariable Long id) { experienceRepo.deleteById(id); }
 
     // ---------------- EDUCATION ----------------
     @GetMapping("/education")
@@ -169,7 +164,7 @@ public class PortfolioController {
             cert.setCertName(newCert.getCertName());
             cert.setIssuer(newCert.getIssuer());
             cert.setIssueDate(newCert.getIssueDate());
-            // cert.setLink(newCert.getLink()); // Uncomment if you add link field to model
+            // cert.setLink(newCert.getLink()); 
             return certificateRepo.save(cert);
         }).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Certificate not found"));
     }

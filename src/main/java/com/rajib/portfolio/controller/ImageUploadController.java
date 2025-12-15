@@ -1,32 +1,30 @@
 package com.rajib.portfolio.controller;
 
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000")
+// FIX: Added https:// and localhost
+@CrossOrigin(origins = {"https://rajib-portfolio-two.vercel.app", "http://localhost:3000"})
 public class ImageUploadController {
 
-    // Define the folder where images will be stored
-    // System.getProperty("user.dir") gets your project root folder
     private final Path fileStorageLocation = Paths.get(System.getProperty("user.dir") + "/uploads");
 
     public ImageUploadController() {
         try {
-            // Create the directory if it doesn't exist
             Files.createDirectories(this.fileStorageLocation);
         } catch (Exception ex) {
             throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", ex);
@@ -36,18 +34,13 @@ public class ImageUploadController {
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            // Generate a unique filename to avoid conflicts (e.g., profile_12345.jpg)
             String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            
-            // Resolve the file path
             Path targetLocation = this.fileStorageLocation.resolve(fileName);
-            
-            // Save the file
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            // Return the URL that the frontend can use to access this image
-            // NOTE: We will configure the /uploads/ path in the next step (WebConfig)
-            String fileUrl = "http://localhost:8080/uploads/" + fileName;
+            // NOTE: This URL will likely need to be the Render URL in production
+            // Ideally, use environment variable for base URL
+            String fileUrl = "https://rajib-portfolio-api.onrender.com/uploads/" + fileName;
             
             return ResponseEntity.ok(fileUrl);
         } catch (IOException ex) {
