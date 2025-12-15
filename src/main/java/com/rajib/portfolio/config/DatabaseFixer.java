@@ -14,33 +14,33 @@ public class DatabaseFixer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("--- 🛠️ RUNNING DATABASE FIXER 🛠️ ---");
+        System.out.println("--- 🛠️ RUNNING DATABASE FIXER (LONGTEXT) 🛠️ ---");
         
-        // Helper method to run SQL safely
-        runSql("ALTER TABLE profile MODIFY summary TEXT");
-        runSql("ALTER TABLE profile MODIFY about_content TEXT");
-        runSql("ALTER TABLE profile MODIFY photo_url TEXT");
-        runSql("ALTER TABLE profile MODIFY about_photo_url TEXT");
+        // Profile Table
+        runSql("ALTER TABLE profile MODIFY summary LONGTEXT");
+        runSql("ALTER TABLE profile MODIFY about_content LONGTEXT");
+        runSql("ALTER TABLE profile MODIFY photo_url LONGTEXT");
+        runSql("ALTER TABLE profile MODIFY about_photo_url LONGTEXT");
         
-        runSql("ALTER TABLE projects MODIFY description TEXT");
-        runSql("ALTER TABLE projects MODIFY project_credentials TEXT");
+        // Projects Table
+        runSql("ALTER TABLE projects MODIFY description LONGTEXT");
+        runSql("ALTER TABLE projects MODIFY project_credentials LONGTEXT");
         
-        runSql("ALTER TABLE experience MODIFY description TEXT");
-        runSql("ALTER TABLE education MODIFY description TEXT");
+        // Experience & Education
+        runSql("ALTER TABLE experience MODIFY description LONGTEXT");
+        runSql("ALTER TABLE education MODIFY description LONGTEXT");
         
-        System.out.println("--- ✅ DATABASE FIXER FINISHED ---");
+        System.out.println("--- ✅ DATABASE COLUMNS EXPANDED TO LONGTEXT ---");
     }
 
     private void runSql(String sql) {
-        // Fix "Null type safety" warning by ensuring sql is not null
         if (sql == null) return;
 
         try {
             jdbcTemplate.execute(sql);
             System.out.println("SUCCESS: " + sql);
         } catch (DataAccessException e) {
-            // Fix "catch specific exception" warning by catching DataAccessException
-            // It might fail if table doesn't exist yet, which is fine.
+            // It might fail if table doesn't exist yet or connection drops
             System.out.println("SKIPPED: " + sql + " (Reason: " + e.getMessage() + ")");
         }
     }
