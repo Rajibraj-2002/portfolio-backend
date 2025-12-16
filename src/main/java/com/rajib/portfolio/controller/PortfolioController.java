@@ -4,7 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate; // IMPORTED
+import org.springframework.http.ResponseEntity; // Import this
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,37 +42,35 @@ public class PortfolioController {
     @Autowired private EducationRepository educationRepo;
     @Autowired private CertificateRepository certificateRepo;
     
-    // Inject JDBC Template for manual DB fixes
     @Autowired private JdbcTemplate jdbcTemplate;
 
     // --- 🛠️ EMERGENCY DATABASE FIXER ENDPOINT 🛠️ ---
-    // Visit https://your-app.onrender.com/api/fix-db to run this
     @GetMapping("/fix-db")
     public String fixDatabase() {
         StringBuilder logs = new StringBuilder();
         logs.append("Starting Database Fix...<br>");
-        
         try {
             // Profile Table
             jdbcTemplate.execute("ALTER TABLE profile MODIFY summary LONGTEXT");
-            logs.append("✅ Fixed Profile Summary<br>");
             jdbcTemplate.execute("ALTER TABLE profile MODIFY about_content LONGTEXT");
-            logs.append("✅ Fixed Profile About Content<br>");
             jdbcTemplate.execute("ALTER TABLE profile MODIFY photo_url LONGTEXT");
             jdbcTemplate.execute("ALTER TABLE profile MODIFY about_photo_url LONGTEXT");
-            logs.append("✅ Fixed Profile Image URLs<br>");
-
+            
+            // Fix Links (snake_case is standard for Hibernate)
+            jdbcTemplate.execute("ALTER TABLE profile MODIFY cv_link LONGTEXT");
+            jdbcTemplate.execute("ALTER TABLE profile MODIFY linkedin_link LONGTEXT");
+            jdbcTemplate.execute("ALTER TABLE profile MODIFY github_link LONGTEXT");
+            
             // Projects Table
             jdbcTemplate.execute("ALTER TABLE projects MODIFY description LONGTEXT");
-            logs.append("✅ Fixed Project Description<br>");
             jdbcTemplate.execute("ALTER TABLE projects MODIFY project_credentials LONGTEXT");
-            logs.append("✅ Fixed Project Credentials<br>");
+            jdbcTemplate.execute("ALTER TABLE projects MODIFY project_link LONGTEXT");
+            jdbcTemplate.execute("ALTER TABLE projects MODIFY repo_link LONGTEXT");
+            jdbcTemplate.execute("ALTER TABLE projects MODIFY tech_stack TEXT");
 
             // Experience & Education
             jdbcTemplate.execute("ALTER TABLE experience MODIFY description LONGTEXT");
-            logs.append("✅ Fixed Experience Description<br>");
             jdbcTemplate.execute("ALTER TABLE education MODIFY description LONGTEXT");
-            logs.append("✅ Fixed Education Description<br>");
 
             return "<h1>Database Repair Successful!</h1>" + logs.toString();
         } catch (Exception e) {
@@ -79,33 +78,40 @@ public class PortfolioController {
         }
     }
 
-    // ---------------- PROFILE ----------------
+    // ---------------- PROFILE (DEBUG VERSION) ----------------
     @GetMapping("/profile")
     public Profile getProfile() {
         return profileRepo.findAll().stream().findFirst().orElse(new Profile());
     }
 
     @PutMapping("/profile/{id}")
-    public Profile updateProfile(@PathVariable Long id, @RequestBody Profile newProfile) {
-        return profileRepo.findById(id).map(profile -> {
-            profile.setFullName(newProfile.getFullName());
-            profile.setTitle(newProfile.getTitle());
-            profile.setSummary(newProfile.getSummary());
-            profile.setAboutContent(newProfile.getAboutContent());
-            profile.setEmail(newProfile.getEmail());
-            profile.setLinkedinLink(newProfile.getLinkedinLink());
-            profile.setGithubLink(newProfile.getGithubLink());
-            profile.setCvLink(newProfile.getCvLink());
-            profile.setPhotoUrl(newProfile.getPhotoUrl());
-            profile.setAboutPhotoUrl(newProfile.getAboutPhotoUrl());
-            return profileRepo.save(profile);
-        }).orElseGet(() -> {
-            // If ID 1 doesn't exist, create it.
-            // Note: If using AUTO_INCREMENT, setting ID manually might be ignored by some DBs,
-            // but for Profile (singleton), this logic usually works or creates ID 1 if table is empty.
-            newProfile.setId(id);
-            return profileRepo.save(newProfile);
-        });
+    public ResponseEntity<?> updateProfile(@PathVariable Long id, @RequestBody Profile newProfile) {
+        try {
+            Profile savedProfile = profileRepo.findById(id).map(profile -> {
+                profile.setFullName(newProfile.getFullName());
+                profile.setTitle(newProfile.getTitle());
+                profile.setSummary(newProfile.getSummary());
+                profile.setAboutContent(newProfile.getAboutContent());
+                profile.setEmail(newProfile.getEmail());
+                profile.setLinkedinLink(newProfile.getLinkedinLink());
+                profile.setGithubLink(newProfile.getGithubLink());
+                profile.setCvLink(newProfile.getCvLink());
+                profile.setPhotoUrl(newProfile.getPhotoUrl());
+                profile.setAboutPhotoUrl(newProfile.getAboutPhotoUrl());
+                return profileRepo.save(profile);
+            }).orElseGet(() -> {
+                // Do not force ID if auto-increment is on
+                // newProfile.setId(id); 
+                return profileRepo.save(newProfile);
+            });
+            
+            return ResponseEntity.ok(savedProfile);
+            
+        } catch (Exception e) {
+            // 🔥 RETURN THE REAL ERROR MESSAGE TO FRONTEND 🔥
+            e.printStackTrace(); // Print to Render logs
+            return ResponseEntity.status(500).body("SERVER ERROR: " + e.getMessage());
+        }
     }
 
     // ---------------- PROJECTS ----------------
@@ -212,10 +218,7 @@ public class PortfolioController {
 
     @DeleteMapping("/certificates/{id}")
     public void deleteCertificate(@PathVariable Long id) { certificateRepo.deleteById(id); }
-
-    // Health check for UptimeRobot
+    
     @GetMapping("/health")
-    public String healthCheck() {
-        return "Backend is Active";
-    }
+    public String healthCheck() { return "Backend is Active"; }
 }
